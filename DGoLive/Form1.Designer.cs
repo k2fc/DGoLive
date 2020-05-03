@@ -44,6 +44,7 @@
             this.label4 = new System.Windows.Forms.Label();
             this.button3 = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
+            this.button4 = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar2)).BeginInit();
             this.SuspendLayout();
@@ -52,7 +53,7 @@
             // 
             this.inputList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.inputList.FormattingEnabled = true;
-            this.inputList.Location = new System.Drawing.Point(119, 215);
+            this.inputList.Location = new System.Drawing.Point(119, 237);
             this.inputList.Name = "inputList";
             this.inputList.Size = new System.Drawing.Size(211, 21);
             this.inputList.TabIndex = 0;
@@ -60,7 +61,7 @@
             // Input
             // 
             this.Input.AutoSize = true;
-            this.Input.Location = new System.Drawing.Point(82, 218);
+            this.Input.Location = new System.Drawing.Point(82, 240);
             this.Input.Name = "Input";
             this.Input.Size = new System.Drawing.Size(31, 13);
             this.Input.TabIndex = 1;
@@ -69,7 +70,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(74, 245);
+            this.label1.Location = new System.Drawing.Point(74, 267);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(39, 13);
             this.label1.TabIndex = 3;
@@ -79,14 +80,15 @@
             // 
             this.outputList.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.outputList.FormattingEnabled = true;
-            this.outputList.Location = new System.Drawing.Point(119, 242);
+            this.outputList.Location = new System.Drawing.Point(119, 264);
             this.outputList.Name = "outputList";
             this.outputList.Size = new System.Drawing.Size(211, 21);
             this.outputList.TabIndex = 2;
+            this.outputList.SelectedIndexChanged += new System.EventHandler(this.outputList_SelectedIndex_Changed);
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(85, 155);
+            this.button1.Location = new System.Drawing.Point(85, 177);
             this.button1.Name = "button1";
             this.button1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.button1.Size = new System.Drawing.Size(124, 52);
@@ -98,7 +100,7 @@
             // button2
             // 
             this.button2.Enabled = false;
-            this.button2.Location = new System.Drawing.Point(215, 155);
+            this.button2.Location = new System.Drawing.Point(215, 177);
             this.button2.Name = "button2";
             this.button2.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.button2.Size = new System.Drawing.Size(124, 52);
@@ -203,11 +205,22 @@
             this.label5.Text = "RX Buffer";
             this.label5.Visible = false;
             // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(141, 148);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(143, 23);
+            this.button4.TabIndex = 18;
+            this.button4.Text = "Open Players...";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(434, 288);
+            this.Controls.Add(this.button4);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.label4);
@@ -256,6 +269,7 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Button button4;
     }
 }
 

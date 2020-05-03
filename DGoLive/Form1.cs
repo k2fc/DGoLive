@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using System.IO;
 using FragLabs.Audio.Codecs;
 using System.Net;
@@ -44,6 +45,7 @@ namespace DGoLive
             }
             if (comboBox1.Items.Count > 0)
                 comboBox1.SelectedIndex = 0;
+            playersForm = new PlayersForm(new WaveFormat(48000,16,1));
         }
 
         OpusEncoder encoder;
@@ -51,10 +53,14 @@ namespace DGoLive
         
         WaveIn waveIn;
         WaveOut waveOut;
+        BufferedWaveProvider liveInput;
+        MixingSampleProvider MixingSampleProvider;
+
         int bytesPerSegment;
         BufferedWaveProvider playBuffer;
         Timer timer = null;
         ComrexSession session;
+
 
         Decode aacDecoder;
 
@@ -71,7 +77,11 @@ namespace DGoLive
         double rxGain = 0;
         bool killsession = false;
 
+        
+
         Settings settings = new Settings();
+
+        PlayersForm playersForm;
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -95,31 +105,33 @@ namespace DGoLive
             bytesPerSegment = encoder.FrameByteCount(segmentFrames);
 
             waveIn = new WaveIn(WaveCallbackInfo.FunctionCallback());
-            //waveIn.BufferMilliseconds = 20;
+            
             waveIn.DeviceNumber = inputList.SelectedIndex;
             waveIn.DataAvailable += waveIn_DataAvailable;
             waveIn.WaveFormat = new WaveFormat(48000, 16, 1);
+
+            liveInput = new BufferedWaveProvider(waveIn.WaveFormat);
+            List<ISampleProvider> sampleProviders = new List<ISampleProvider>();
+            sampleProviders.Add(liveInput.ToSampleProvider());
+            sampleProviders.Add(playersForm.Mixer);
+            MixingSampleProvider = new MixingSampleProvider(sampleProviders);
+            
 
             playBuffer = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
             playBuffer.DiscardOnBufferOverflow = true;
             waveOut = new WaveOut(WaveCallbackInfo.FunctionCallback());
             waveOut.DeviceNumber = outputList.SelectedIndex;
+            playersForm.PlaybackDeviceNum = outputList.SelectedIndex;
             
 
             
             session = new ComrexSession();
             session.SetDestination(SDPMediaTypesEnum.audio, farEnd, farEnd);
             session.OnRtpPacketReceived += Session_OnRtpPacketReceived;
-            //session.addTrack(track);
             session.Start();
             killsession = false;
 
-            //participant = new RtpParticipant("dennis","DGoLive");
-            //session = new RtpSession(farEnd, participant, true, true);
-            //rtpsender = session.CreateRtpSender("test", PayloadType.Opus, null);
-
             waveOut.Init(playBuffer);
-            
             waveIn.StartRecording();
 
 
@@ -134,6 +146,8 @@ namespace DGoLive
             comboBox1.Enabled = false;
             outputList.Enabled = false;
             inputList.Enabled = false;
+
+            
         }
 
 
@@ -246,12 +260,16 @@ namespace DGoLive
         byte[] notEncodedBuffer = new byte[0];
         private void waveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
+            byte[] liveBytes = AdjustAudioLevelDB(e.Buffer, sendGain);
+            liveInput.AddSamples(liveBytes, 0, e.BytesRecorded);
+            byte[] mixed = new byte[e.BytesRecorded];
+            MixingSampleProvider.ToWaveProvider16().Read(mixed, 0, e.BytesRecorded);
             byte[] soundBuffer = new byte[e.BytesRecorded + notEncodedBuffer.Length];
             for (int i = 0; i < notEncodedBuffer.Length; i++)
                 soundBuffer[i] = notEncodedBuffer[i];
             for (int i = 0; i < e.BytesRecorded; i++)
-                soundBuffer[i + notEncodedBuffer.Length] = e.Buffer[i];
-            soundBuffer = AdjustAudioLevelDB(soundBuffer, sendGain);
+                soundBuffer[i + notEncodedBuffer.Length] = mixed[i];
+            
             sendAudiolevel = AudioLevelDB(soundBuffer);
             int byteCap = bytesPerSegment;
             int segmentCount = (int)Math.Floor((decimal)soundBuffer.Length / byteCap);
@@ -275,7 +293,7 @@ namespace DGoLive
                 for (int j = 1; j < newbuff.Length; j++)
                     newbuff[j] = buff[j-1];
                 session.SendAudioFrame((uint)segmentFrames, 21, newbuff);
-                
+                playersForm.IsEncoding = true;
             }
             if (playBuffer.BufferedDuration.TotalMilliseconds > 10)
             {
@@ -292,13 +310,7 @@ namespace DGoLive
 
         }
 
-        private byte[] StripFirstBytes (byte[] input, int numBytes)
-        {
-            byte[] output = new byte[input.Length - numBytes];
-            for (int i = 0; i < output.Length; i++)
-                output[i] = input[i + numBytes];
-            return output;
-        }
+        
 
         private void button2_Click(object sender, EventArgs e)
         {
@@ -306,6 +318,7 @@ namespace DGoLive
             {
                 button2.Enabled = false;
                 waveIn.StopRecording();
+                while (notEncodedBuffer.Length > bytesPerSegment) { }
                 System.Threading.Thread.Sleep(2*waveIn.BufferMilliseconds);
                 session.SendGoodbyeFrame();
                 session.OnRtpPacketReceived -= Session_OnRtpPacketReceived;
@@ -317,6 +330,7 @@ namespace DGoLive
                 label5.Visible = false;
                 button1.ForeColor = Color.Black;
                 button1.BackColor = SystemColors.Control;
+                playersForm.IsEncoding = false;
             }
 
         }
@@ -333,6 +347,7 @@ namespace DGoLive
         private void Form1_Closing(object sender, EventArgs e)
         {
             button2_Click(sender, e);
+            playersForm.Dispose();
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -352,6 +367,19 @@ namespace DGoLive
             }
             if (comboBox1.Items.Count > 0)
                 comboBox1.SelectedIndex = 0;
+        }
+
+        private void outputList_SelectedIndex_Changed (object sender, EventArgs e)
+        {
+            if (waveOut != null)
+                waveOut.DeviceNumber = outputList.SelectedIndex;
+            if (playersForm != null)
+                playersForm.PlaybackDeviceNum = outputList.SelectedIndex;
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            playersForm.Show();
         }
     }
     
