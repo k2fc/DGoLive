@@ -31,6 +31,14 @@ namespace DGoLive
             Mixer = new MixingSampleProvider(listofonesampleprovider);
         }
 
+        public void StopAll()
+        {
+            foreach(Player player in Players)
+            {
+                player.Stop();
+            }
+        }
+
         private void btnAddClip_Click(object sender, EventArgs e)
         {
            
@@ -232,9 +240,14 @@ namespace DGoLive
             }
             else
             {
-                audioPlayer.Stop();
-                Buffer.ClearBuffer();
+                Stop();
             }
+        }
+
+        public void Stop()
+        {
+            audioPlayer.Stop();
+            Buffer.ClearBuffer();
         }
 
         private void Timer_Tick(object sender, EventArgs e)

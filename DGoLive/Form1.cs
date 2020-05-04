@@ -85,6 +85,7 @@ namespace DGoLive
 
         private void button1_Click(object sender, EventArgs e)
         {
+            playersForm.StopAll();
             try
             {
                 farEnd = settings.Remotes[comboBox1.SelectedIndex].GetIPEndPoint();
@@ -314,6 +315,7 @@ namespace DGoLive
 
         private void button2_Click(object sender, EventArgs e)
         {
+            playersForm.StopAll();
             if (button2.Enabled)
             {
                 button2.Enabled = false;
