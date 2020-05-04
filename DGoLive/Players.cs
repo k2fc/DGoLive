@@ -88,6 +88,7 @@ namespace DGoLive
         private WaveOutEvent audioPlayer;
         private PlayersForm CallingForm;
         private int clipBytes = 0;
+        private byte[] clipBuffer;
         public BufferedWaveProvider Buffer { get; private set; }
         private Timer timer = new Timer()
         {
@@ -142,6 +143,8 @@ namespace DGoLive
                 reader = new AudioFileReader(filename);
                 converter = new WdlResamplingSampleProvider(reader, format.SampleRate).ToMono().ToWaveProvider16();
                 clipBytes = (int)(((double)converter.WaveFormat.AverageBytesPerSecond / (double)reader.WaveFormat.AverageBytesPerSecond) * reader.Length);
+                clipBuffer = new byte[clipBytes];
+                converter.Read(clipBuffer, 0, clipBytes);
                 if (converter.WaveFormat.AverageBytesPerSecond != format.AverageBytesPerSecond)
                 {
                     MessageBox.Show("Audio file is wrong format.  Should be " + format.ToString());
@@ -218,8 +221,6 @@ namespace DGoLive
                 {
                     reader.Position = 0;
                     Buffer.ClearBuffer();
-                    byte[] clipBuffer = new byte[clipBytes];
-                    converter.Read(clipBuffer, 0, clipBytes);
                     Buffer.AddSamples(clipBuffer, 0, clipBytes);
                     PlayButton.BackColor = Color.Lime;
                 }
