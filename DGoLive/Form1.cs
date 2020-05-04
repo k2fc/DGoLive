@@ -2,16 +2,13 @@
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using System.IO;
 using FragLabs.Audio.Codecs;
 using System.Net;
 using SIPSorcery.Net;
 using System.Drawing;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Drawing.Design;
-using System.Linq;
 
 namespace DGoLive
 {
@@ -49,7 +46,6 @@ namespace DGoLive
         }
 
         OpusEncoder encoder;
-        OpusDecoder decoder;
         
         WaveIn waveIn;
         WaveOut waveOut;
@@ -61,8 +57,7 @@ namespace DGoLive
         Timer timer = null;
         ComrexSession session;
 
-
-        Decode aacDecoder;
+        IDGDecoder Decoder;
 
         int rxpacketcount;
         int lostpacketcount;
@@ -86,9 +81,10 @@ namespace DGoLive
         private void button1_Click(object sender, EventArgs e)
         {
             playersForm.StopAll();
+            Remote remote = settings.Remotes[comboBox1.SelectedIndex];
             try
             {
-                farEnd = settings.Remotes[comboBox1.SelectedIndex].GetIPEndPoint();
+                farEnd = remote.GetIPEndPoint();
             }
             catch
             {
@@ -100,8 +96,7 @@ namespace DGoLive
             label5.Visible = true;
             segmentFrames = 960;
             encoder = OpusEncoder.Create(48000, 1, FragLabs.Audio.Codecs.Opus.Application.Audio);
-            decoder = OpusDecoder.Create(48000, 1);
-            aacDecoder = new Decode();
+            Decoder = new DGDecoder(remote.CodecType, 48000, 1);
             encoder.Bitrate = 64000;
             bytesPerSegment = encoder.FrameByteCount(segmentFrames);
 
@@ -170,14 +165,14 @@ namespace DGoLive
             }
                 
             lastseq = packet.Header.SequenceNumber;
-            byte[] encoded = packet.Payload.Skip(5).ToArray();
+            
             int len = 0;
             try
             {
                 if (playBuffer.BufferedDuration.TotalMilliseconds < 250)
                 {
                     byte[] decoded = new byte[] { 0 };
-                    aacDecoder.processBuffer(encoded, out decoded);
+                    Decoder.processBuffer(packet.Payload, out decoded);
                     len = decoded.Length;
                     //decoded = decoder.Decode(encoded, encoded.Length, out len);
                     rxAudioLevel = AudioLevelDB(decoded);
@@ -186,9 +181,9 @@ namespace DGoLive
                     playBuffer.AddSamples(decoded, 0, len);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+               
             }
             if ((int)playBuffer.BufferedDuration.TotalMilliseconds > 20)
             {
@@ -310,9 +305,6 @@ namespace DGoLive
                
 
         }
-
-        
-
         private void button2_Click(object sender, EventArgs e)
         {
             playersForm.StopAll();
@@ -333,6 +325,7 @@ namespace DGoLive
                 button1.ForeColor = Color.Black;
                 button1.BackColor = SystemColors.Control;
                 playersForm.IsEncoding = false;
+                Decoder.Dispose();
             }
 
         }

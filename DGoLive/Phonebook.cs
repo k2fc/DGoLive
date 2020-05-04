@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.IO;
+using System.ComponentModel;
 
 namespace DGoLive
 {
@@ -36,9 +37,14 @@ namespace DGoLive
     [Serializable]
     class Remote
     {
+        [Category("General")]
         public string Name { get; set; }
+        [Category("IP Endpoint")]
         public string IPAddress { get; set; }
+        [Category("IP Endpoint")]
         public int Port { get; set; }
+        [Category("Decoder Settings")]
+        public CodecType CodecType { get; set; }
         public IPEndPoint GetIPEndPoint() 
         { 
             return new IPEndPoint(System.Net.IPAddress.Parse(IPAddress), Port);
