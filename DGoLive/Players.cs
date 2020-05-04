@@ -229,7 +229,7 @@ namespace DGoLive
                 }
                 reader.Position = 0;
                 audioPlayer.DeviceNumber = CallingForm.PlaybackDeviceNum;
-                audioPlayer.Init(converter);
+                audioPlayer.Init(reader);
                 audioPlayer.PlaybackStopped += AudioPlayer_PlaybackStopped;
                 audioPlayer.Play();
                 
