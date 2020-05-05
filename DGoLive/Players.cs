@@ -48,7 +48,8 @@ namespace DGoLive
                 //Get the path of specified file
                 string filename = dialog.FileName;
                 Player newplayer = new Player(filename, WaveFormat, this);
-                Players.Add(newplayer);
+                if (newplayer.Buffer != null)
+                    Players.Add(newplayer);
                 ReloadPlayers();
             }
                 
@@ -141,7 +142,10 @@ namespace DGoLive
             try
             {
                 reader = new AudioFileReader(filename);
-                converter = new WdlResamplingSampleProvider(reader, format.SampleRate).ToMono().ToWaveProvider16();
+                if (format.Channels == 1)
+                    converter = new WdlResamplingSampleProvider(reader, format.SampleRate).ToMono().ToWaveProvider16();
+                else if (format.Channels == 2)
+                    converter = new WdlResamplingSampleProvider(reader, format.SampleRate).ToWaveProvider16();
                 clipBytes = (int)(((double)converter.WaveFormat.AverageBytesPerSecond / (double)reader.WaveFormat.AverageBytesPerSecond) * reader.Length);
                 clipBuffer = new byte[clipBytes];
                 converter.Read(clipBuffer, 0, clipBytes);
